@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { saveToken } from "../utils/auth";
+import { saveToken, authStorage } from "../utils/auth";
 import type {
   EmailStatus,
   SignupFormData,
   SignupResult,
   StoredUser,
 } from "../types";
+import { apiUrl } from "../lib/api";
 
 const USERS_KEY = "users";
 
@@ -80,7 +81,7 @@ export const useSignup = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,9 +104,9 @@ export const useSignup = () => {
       if (data?.token) {
         saveToken(data.token);
       }
-      localStorage.setItem("isAdmin", String(data?.is_admin === true));
+      authStorage.setItem("isAdmin", String(data?.is_admin === true));
       if (data?.id != null) {
-        localStorage.setItem("userId", String(data.id));
+        authStorage.setItem("userId", String(data.id));
       }
 
       return { success: true, email: formData.email };

@@ -1,3 +1,9 @@
+/**
+ * Per-tab login (sessionStorage) so two tabs can be signed in as two
+ * different users, e.g. to chat or video-call yourself in a demo.
+ */
+export const authStorage: Storage = sessionStorage;
+
 const TOKEN_KEY = "token";
 const EXPIRY_KEY = "tokenExpiry";
 const USER_KEY = "currentUser";
@@ -5,26 +11,26 @@ const USER_KEY = "currentUser";
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export function saveToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(EXPIRY_KEY, String(Date.now() + ONE_HOUR_MS));
+  authStorage.setItem(TOKEN_KEY, token);
+  authStorage.setItem(EXPIRY_KEY, String(Date.now() + ONE_HOUR_MS));
 }
 
 export function getToken(): string | null {
-  const expiry = localStorage.getItem(EXPIRY_KEY);
+  const expiry = authStorage.getItem(EXPIRY_KEY);
   if (expiry && Date.now() > Number(expiry)) return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return authStorage.getItem(TOKEN_KEY);
 }
 
 export function tokenExpiry(): boolean {
-  const expiry = localStorage.getItem(EXPIRY_KEY);
+  const expiry = authStorage.getItem(EXPIRY_KEY);
   if (!expiry) return false;
   return Date.now() > Number(expiry);
 }
 
 export function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(EXPIRY_KEY);
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem("userId");
-  localStorage.removeItem("isAdmin");
+  authStorage.removeItem(TOKEN_KEY);
+  authStorage.removeItem(EXPIRY_KEY);
+  authStorage.removeItem(USER_KEY);
+  authStorage.removeItem("userId");
+  authStorage.removeItem("isAdmin");
 }

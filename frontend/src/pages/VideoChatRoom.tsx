@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { apiUrl, wsUrl } from "../lib/api";
+import { authStorage } from "../utils/auth";
 
 type Props = {
   roomId: string;
@@ -31,7 +33,7 @@ export default function Room({ roomId, onDisconnect }: Props) {
   };
 
   const createPC = async (ws: WebSocket) => {
-    const res = await fetch("/api/turn-credentials");
+    const res = await fetch(apiUrl("/api/turn-credentials"));
     const data = await res.json();
 
     const pc = new RTCPeerConnection({
@@ -98,10 +100,9 @@ export default function Room({ roomId, onDisconnect }: Props) {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token") ?? "";
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const token = authStorage.getItem("token") ?? "";
     const ws = new WebSocket(
-      `${proto}//${window.location.host}/api/room/${roomId}?token=${encodeURIComponent(token)}`
+      wsUrl(`/api/room/${roomId}?token=${encodeURIComponent(token)}`)
     );
     wsRef.current = ws;
 

@@ -1,16 +1,17 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { saveToken } from "../utils/auth";
+import { saveToken, authStorage } from "../utils/auth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/footer";
 import HowVollyWorks from "../components/HowVollyWorks";
+import { apiUrl } from "../lib/api";
 
 type HomePageProps = {
   children: ReactNode;
   onSignupSuccess?: (email: string) => void;
 };
 
-const AUTH_URL = "/api/auth/register";
+const AUTH_URL = apiUrl("/api/auth/register");
 
 const scroll = () => {
   window.scrollTo({
@@ -105,8 +106,8 @@ function HomePage({ children, onSignupSuccess }: HomePageProps) {
 
       if (payload?.token) saveToken(payload.token);
       if (payload?.id != null)
-        localStorage.setItem("userId", String(payload.id));
-      localStorage.setItem("currentUser", formData.email);
+        authStorage.setItem("userId", String(payload.id));
+      authStorage.setItem("currentUser", formData.email);
       onSignupSuccess?.(formData.email);
       setStatusMessage("Kontot skapades.");
       setFormData({

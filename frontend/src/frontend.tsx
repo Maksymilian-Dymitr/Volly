@@ -9,11 +9,21 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import appRouter from "./routes/AppRouter";
+import ModeBanner from "./components/ModeBanner";
+import { detectMode } from "./lib/mode";
 import "./index.css";
+
+// Live server reachable? Use it. Otherwise start the in-browser demo backend
+// before the app renders, so its very first requests are already handled.
+if ((await detectMode()) === "demo") {
+  const { startDemoBackend } = await import("./demo/browser");
+  await startDemoBackend();
+}
 
 const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
+    <ModeBanner />
     <RouterProvider router={appRouter()} />
   </StrictMode>
 );

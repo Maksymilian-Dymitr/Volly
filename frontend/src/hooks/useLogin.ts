@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { saveToken } from "../utils/auth";
+import { saveToken, authStorage } from "../utils/auth";
+import { apiUrl } from "../lib/api";
 
 export const useLogin = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export const useLogin = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -39,13 +40,13 @@ export const useLogin = () => {
       }
 
       saveToken(token);
-      localStorage.setItem("currentUser", email);
-      localStorage.setItem("isAdmin", String(data?.is_admin === true));
+      authStorage.setItem("currentUser", email);
+      authStorage.setItem("isAdmin", String(data?.is_admin === true));
       if (data?.id != null) {
-        localStorage.setItem("userId", String(data.id));
+        authStorage.setItem("userId", String(data.id));
       }
       if (data?.onboarding_completed === false) {
-        localStorage.setItem("needsOnboarding", "true");
+        authStorage.setItem("needsOnboarding", "true");
       }
       return true;
     } catch {

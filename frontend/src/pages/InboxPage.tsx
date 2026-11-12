@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import InboxConversationCard from "../components/InboxConversationCard";
 import { VideoChatLobby } from "./VideoChatLobby";
 import VideoChatRoom from "./VideoChatRoom";
+import { apiUrl, wsUrl } from "../lib/api";
+import { authStorage } from "../utils/auth";
 
 type ChatStatus = "pending" | "accepted" | "denied";
 
@@ -100,7 +102,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
 
   const userId = (() => {
     try {
-      const token = localStorage.getItem("token");
+      const token = authStorage.getItem("token");
       if (!token) return 0;
       const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(b64));
@@ -112,7 +114,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
   const hasActiveChat = Boolean(selectedId);
 
   const getAuthHeader = (): Record<string, string> => {
-    const token = localStorage.getItem("token");
+    const token = authStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -134,7 +136,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const response = await fetch("/api/chat/my", {
+        const response = await fetch(apiUrl("/api/chat/my"), {
           headers: getAuthHeader(),
         });
         if (!response.ok) throw new Error("Failed to fetch chats");
@@ -159,7 +161,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
     const fetchMessages = async () => {
       if (showSpinner) setIsLoading(true);
       try {
-        const response = await fetch(`/api/chat/chat/${targetId}`, {
+        const response = await fetch(apiUrl(`/api/chat/chat/${targetId}`), {
           headers: getAuthHeader(),
         });
         if (!response.ok) throw new Error("Failed to fetch messages");
@@ -196,10 +198,10 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
 
   useEffect(() => {
     if (!selectedId || status !== "accepted" || !userId) return;
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url =
-      `${proto}//${window.location.host}/api/chat/ws?userId=${encodeURIComponent(String(userId))}` +
-      `&roomId=${encodeURIComponent(selectedId)}`;
+    const url = wsUrl(
+      `/api/chat/ws?userId=${encodeURIComponent(String(userId))}` +
+        `&roomId=${encodeURIComponent(selectedId)}`
+    );
     const socket = new WebSocket(url);
     socketRef.current = socket;
 
@@ -226,7 +228,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
       id: `tmp-${Date.now()}`,
       request_id: selectedId,
       sender_id: userId,
-      sender_email: localStorage.getItem("currentUser"),
+      sender_email: authStorage.getItem("currentUser"),
       text_message: text,
       created_at: new Date().toISOString(),
     };
@@ -237,7 +239,7 @@ export default function InboxPage({ pendingChat }: InboxPageProps = {}) {
   const updateStatus = async (next: "accepted" | "denied") => {
     if (!selectedId) return;
     try {
-      const res = await fetch(`/api/chat/chat/${selectedId}/status`, {
+      const res = await fetch(apiUrl(`/api/chat/chat/${selectedId}/status`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({ status: next }),

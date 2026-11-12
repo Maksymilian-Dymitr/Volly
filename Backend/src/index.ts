@@ -8,7 +8,7 @@ import postsRoutes from "./modules/posts/posts.routes";
 import turnRoutes from "./modules/video-chat/video-chat.turn";
 
 async function start() {
-  const app = fastify({ logger: true });
+  const app = fastify({ logger: true, trustProxy: true });
 
   await Setup(app);
 

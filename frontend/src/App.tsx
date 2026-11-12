@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { tokenExpiry, clearAuth } from "./utils/auth";
+import { tokenExpiry, clearAuth, authStorage } from "./utils/auth";
 import LoginPage from "./pages/LogingPage";
 import HomePage from "./pages/HomePage";
 import Navbar from "./components/Navbar";
@@ -17,6 +17,7 @@ import InboxPage, { type ChatPreview } from "./pages/InboxPage";
 import ProfilePage from "./pages/ProfilePage";
 import OnboardingPage from "./pages/Onboarding/OnboardingPage";
 import ConfirmDialog from "./components/ConfirmDialog";
+import { apiUrl } from "./lib/api";
 
 type Post = {
   id: string;
@@ -42,14 +43,14 @@ export function App() {
   const navigate = useNavigate();
 
   const [currentUser, setCurrentUser] = useState<string | null>(() =>
-    localStorage.getItem("currentUser")
+    authStorage.getItem("currentUser")
   );
   const [isAdmin, setIsAdmin] = useState<boolean>(
-    () => localStorage.getItem("isAdmin") === "true"
+    () => authStorage.getItem("isAdmin") === "true"
   );
   const [sessionExpired, setSessionExpired] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(
-    () => localStorage.getItem("needsOnboarding") === "true"
+    () => authStorage.getItem("needsOnboarding") === "true"
   );
   const [prefillEmail] = useState("");
   const [posts, setPosts] = useState<Post[]>([]);
@@ -82,7 +83,7 @@ export function App() {
 
   const loadPosts = useCallback(async () => {
     try {
-      const res = await fetch("/api/posts");
+      const res = await fetch(apiUrl("/api/posts"));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const mapped: Post[] = (data as Record<string, unknown>[]).map((p) => ({
@@ -153,9 +154,9 @@ export function App() {
     if (post.author_email && post.author_email === currentUser) {
       return;
     }
-    const token = localStorage.getItem("token");
+    const token = authStorage.getItem("token");
     try {
-      const res = await fetch("/api/chat/chat", {
+      const res = await fetch(apiUrl("/api/chat/chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -206,8 +207,8 @@ export function App() {
     setPendingDeletePostId(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`/api/posts/${postId}`, {
+      const token = authStorage.getItem("token");
+      const res = await fetch(apiUrl(`/api/posts/${postId}`), {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -238,7 +239,7 @@ export function App() {
       setCurrentUser(null);
       setIsAdmin(false);
       setNeedsOnboarding(false);
-      localStorage.removeItem("needsOnboarding");
+      authStorage.removeItem("needsOnboarding");
       if (expired) setSessionExpired(true);
       navigate("/");
     },
@@ -272,8 +273,8 @@ export function App() {
             onComplete={async (data) => {
               console.log("Onboarding complete:", data);
               try {
-                const token = localStorage.getItem("token");
-                await fetch("/api/users/me/onboarding", {
+                const token = authStorage.getItem("token");
+                await fetch(apiUrl("/api/users/me/onboarding"), {
                   method: "PATCH",
                   headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
@@ -281,7 +282,7 @@ export function App() {
                 console.error("Failed to persist onboarding completion", e);
               }
               setNeedsOnboarding(false);
-              localStorage.removeItem("needsOnboarding");
+              authStorage.removeItem("needsOnboarding");
             }}
           />
         </main>
@@ -308,7 +309,7 @@ export function App() {
               onCancel={() => goToTab("start")}
               onSubmit={async (post) => {
                 try {
-                  const token = localStorage.getItem("token");
+                  const token = authStorage.getItem("token");
                   const body = {
                     title: post.title,
                     description: post.content,
@@ -318,7 +319,7 @@ export function App() {
                     tagg: (post.tags || []).join(","),
                   };
 
-                  const res = await fetch("/api/posts", {
+                  const res = await fetch(apiUrl("/api/posts"), {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
@@ -374,7 +375,7 @@ export function App() {
                   : undefined
               }
               onProfileUpdated={(nextEmail) => {
-                localStorage.setItem("currentUser", nextEmail);
+                authStorage.setItem("currentUser", nextEmail);
                 setCurrentUser(nextEmail);
                 setSelectedProfileEmail(null);
               }}
@@ -420,9 +421,9 @@ export function App() {
       onSignupSuccess={(email) => {
         setSessionExpired(false);
         setCurrentUser(email);
-        setIsAdmin(localStorage.getItem("isAdmin") === "true");
+        setIsAdmin(authStorage.getItem("isAdmin") === "true");
         setNeedsOnboarding(true);
-        localStorage.setItem("needsOnboarding", "true");
+        authStorage.setItem("needsOnboarding", "true");
       }}
     >
       <div className="flex flex-col">
@@ -435,10 +436,10 @@ export function App() {
           initialEmail={prefillEmail}
           onLoginSuccess={(email) => {
             setCurrentUser(email);
-            setIsAdmin(localStorage.getItem("isAdmin") === "true");
+            setIsAdmin(authStorage.getItem("isAdmin") === "true");
             setSessionExpired(false);
             setNeedsOnboarding(
-              localStorage.getItem("needsOnboarding") === "true"
+              authStorage.getItem("needsOnboarding") === "true"
             );
           }}
         />

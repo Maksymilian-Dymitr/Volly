@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { apiUrl } from "../lib/api";
+import { authStorage } from "../utils/auth";
 
 type Props = {
   userEmail: string;
@@ -28,8 +30,8 @@ type ProfileResponse = {
   bio?: string | null;
 };
 
-const PROFILE_API_BASE = "/api/users/by-email";
-const POSTS_API_BASE = "/api/posts";
+const PROFILE_API_BASE = apiUrl("/api/users/by-email");
+const POSTS_API_BASE = apiUrl("/api/posts");
 
 function getDisplayName(email: string) {
   const localPart = email.split("@")[0] || "Anna Andersson";
@@ -119,7 +121,7 @@ export default function ProfilePage({
       setIsEditing(false);
 
       try {
-        const token = localStorage.getItem("token");
+        const token = authStorage.getItem("token");
         const response = await fetch(
           `${PROFILE_API_BASE}/${encodeURIComponent(userEmail)}`,
           {
@@ -227,7 +229,7 @@ export default function ProfilePage({
   }, [userEmail]);
 
   const deletePost = async (postId: string | number) => {
-    const token = localStorage.getItem("token");
+    const token = authStorage.getItem("token");
     try {
       const res = await fetch(`${POSTS_API_BASE}/${postId}`, {
         method: "DELETE",
@@ -260,7 +262,7 @@ export default function ProfilePage({
     setStatusMessage("");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = authStorage.getItem("token");
       const response = await fetch(
         `${PROFILE_API_BASE}/${encodeURIComponent(userEmail)}`,
         {
